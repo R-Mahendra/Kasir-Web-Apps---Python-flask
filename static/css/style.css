@@ -1,0 +1,439 @@
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css");
+@import url("https://fonts.googleapis.com/css2?family=Iceberg&family=Poppins:wght@200;300;400;500;600;700;800&family=Viga&family=Wallpoet&display=swap");
+@import url(https://db.onlinewebfonts.com/c/6138beb83221f6eb46ed08543a304d1d?family=Twentieth+Century);
+* {
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  outline: none;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  font-family: var(--font-viga);
+}
+::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--zx-yellow);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  border-radius: 5px;
+  background: transparent;
+}
+:root {
+  --warna-cofe: #b3875b;
+  --baground-hitam: #010101;
+  --text-steal: #e2e8f0;
+  --zx-grey-dark: #1f242d;
+  --zx-grey-light: #323946;
+  --zx-blue-light: #0dcaf0;
+  --zx-blue-dark: #081b29;
+  --text-white: #f1f5f9;
+  --text-dark: #020822;
+  --zx-red: #b91c1c;
+  --zx-cyan: #155e75;
+  --zx-green: #16a34a;
+  --zx-violet: #712cf9;
+  --zx-pink: #ff00ff;
+  --zx-teal: #5eead4;
+  --font-default: "Poppins", sans-serif;
+  --font-viga: "Viga", sans-serif;
+  --font-iceberg: "Iceberg", cursive;
+  --font-walpoet: "Wallpoet", sans-serif;
+  --font-twentieth-century: "Twentieth Century", sans-serif;
+  --shadow-first: 6px 6px 10px rgba(0, 0, 0, 1), 1px 1px 10px rgba(255, 255, 255, 0.6);
+  --shadow-second: 6px 6px 10px rgba(0, 0, 0, 1), 1px 1px 10px rgba(255, 255, 255, 0.6), inset 2px 2px 10px rgba(0, 0, 0, 1), inset -1px -1px 5px rgba(255, 255, 255, 0.6);
+  --articel-bg: #cbd5e1;
+  --zx-yellow: #eab308;
+}
+
+section {
+  min-height: 100vh;
+  background: var(--text-steal);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 7rem 0 0 0;
+}
+
+.navbar {
+  background-color: var(--zx-violet);
+  border-bottom: 4px solid var(--zx-yellow);
+  padding: 5rem;
+}
+.nav-link {
+  margin-top: 0;
+  color: var(--text-white);
+  font-size: 1.4rem;
+  font-weight: 500;
+  transition: 0.3s ease;
+  border-bottom: 0px solid var(--zx-yellow);
+}
+.nav-item {
+  margin-right: 1rem;
+}
+.nav-link:hover,
+.navsrc a:hover {
+  color: var(--zx-yellow);
+  transition: all 0.3s ease;
+  transform: scale(1.05);
+}
+.navbar-brand {
+  color: var(--text-white);
+  font-size: 1.8rem;
+  font-weight: 500;
+  font-style: italic;
+  margin: 0;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+.navbar-brand:hover {
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+  rotate: -2deg;
+}
+.nav-link.active {
+  border-bottom: 2px solid var(--zx-yellow);
+  padding-bottom: 0;
+  transition: 0.3s ease;
+}
+
+.navbar-brand .kelompok {
+  color: var(--zx-yellow);
+  font-family: var(--font-default);
+  font-weight: 700;
+}
+
+.navbar-toggler {
+  border-color: var(--text-white);
+  border: 2px solid var(--text-white);
+  color: var(--text-white);
+}
+.navbar-toggler:hover {
+  box-shadow: 0 0 10px var(--text-white);
+}
+
+.navsrc button {
+  color: var(--zx-violet);
+  font-size: 1.4rem;
+  background: var(--zx-yellow);
+  border-radius: 1rem;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.navsrc button:active,
+.navsrc button:hover {
+  transform: scale(0.9);
+  transition: 0.3s ease;
+  color: var(--zx-violet);
+  font-size: 1.4rem;
+  background: var(--zx-yellow);
+  border-radius: 1rem;
+  font-weight: 600;
+}
+
+.jumlahcart {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.3rem;
+  height: 1.3rem;
+  background: var(--zx-red);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: var(--text-white);
+  font-weight: 700;
+}
+
+.navbar .logo img {
+  width: 8%;
+  padding: 0;
+}
+.navbar .logo {
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Menu syle*/
+#Menu h1 {
+  font-weight: 600;
+  font-family: var(--font-viga);
+  color: var(--zx-violet);
+  font-size: 5rem;
+  margin-bottom: 4rem;
+  position: relative;
+}
+
+#Menu h1 span {
+  position: absolute;
+  width: 50%;
+  border-bottom: 4px solid var(--zx-violet);
+  bottom: 0%;
+  left: 50%;
+  transform: translate(-50%);
+}
+
+#Menu .card {
+  background: none;
+  border: 0;
+  margin: 0;
+  font-family: var(--font-viga);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+#Menu .card img {
+  width: 80%;
+  border-radius: 1rem;
+  border: 3px solid var(--zx-violet);
+  margin: 0;
+  padding: 0;
+  transition: 0.3s ease;
+  font-family: var(--font-viga);
+}
+#Menu .card img:hover {
+  border-color: var(--zx-yellow);
+  transform: scale(0.98);
+  transition: 0.3s ease;
+  cursor: pointer;
+}
+
+#Menu .btn-cart {
+  background: var(--zx-violet);
+  color: var(--text-white);
+  transition: 0.3s;
+  border-radius: 1rem;
+  margin: 10px;
+  border: 2px solid var(--zx-yellow);
+}
+#Menu .btn-cart:hover {
+  background: var(--zx-violet);
+  color: var(--text-white);
+  transform: scale(1.1);
+  transition: 0.3s ease;
+}
+#Team {
+  background-image: url("/static/img/bg.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  animation: moveBackground 20s linear infinite;
+}
+
+@keyframes moveBackground {
+  0% {
+    background-position: center top;
+  }
+  50% {
+    background-position: center bottom;
+  }
+  100% {
+    background-position: center top;
+  }
+}
+
+#Team h1 {
+  font-weight: 600;
+  font-family: var(--font-viga);
+  color: var(--zx-violet);
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  text-align: center;
+}
+#Team {
+  padding-top: 5rem;
+}
+
+#Team img {
+  border-radius: 50%;
+  width: 35%;
+  border: 3px solid var(--zx-violet);
+  padding: 0;
+  transition: 0.3s ease-in;
+}
+
+#Team .card {
+  background: var(--zx-yellow);
+  border-radius: 2rem;
+  padding-top: 1rem;
+  border-top: 10px solid var(--zx-violet);
+  border-bottom: 10px solid var(--zx-violet);
+  border-left: 0;
+  border-right: 0;
+  transition: 0.3s ease;
+}
+
+#Team .card:hover {
+  background: var(--text-white);
+  cursor: pointer;
+  transition: 0.3s ease-in;
+  transform: scale(1.02);
+  border-top: 10px solid var(--zx-yellow);
+  border-bottom: 10px solid var(--zx-yellow);
+}
+#Team .card:hover img {
+  border: 3px solid var(--zx-yellow);
+  transition: 0.3s ease-in;
+}
+
+#Team .card-body h5 {
+  color: var(--zx-violet);
+}
+
+.canvas-parent {
+  background-color: var(--zx-violet);
+  border-top-left-radius: 1.5rem;
+  border-bottom-left-radius: 1.5rem;
+  min-width: 35%;
+  min-height: 100%;
+}
+
+.canvas-parent .canvas-body {
+  background: var(--text-steal);
+  border-left: 5px solid var(--zx-yellow);
+  border-bottom-left-radius: 1.5rem;
+  padding: 10px 1rem 10px 10px;
+}
+
+.canvas-parent .canvas-header {
+  border-left: 5px solid var(--zx-yellow);
+  border-top-left-radius: 1.5rem;
+  color: var(--text-white);
+}
+.canvas-parent .btn-closes {
+  background: none;
+  padding: 0;
+  margin: 0;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+}
+.canvas-parent .btn-closes i {
+  font-size: 2rem;
+  color: var(--text-white);
+}
+.canvas-body .form-label {
+  color: var(--zx-violet);
+}
+.canvas-body .form-control {
+  color: var(--zx-violet);
+  border: 2px solid var(--zx-violet);
+  box-shadow: none;
+  border-radius: 1rem;
+  background: var(--text-white);
+}
+
+.wrapper {
+  max-height: 40vh; /* atau 60vh bebas */
+  overflow-x: hidden;
+}
+
+.wrapper .wrapper-row {
+  border-bottom: 2px solid var(--zx-violet);
+  padding: 10px 1rem 10px 0;
+  margin: 0;
+}
+.wrapper .cards h5,
+.wrapper .card-item h6,
+.wrapper .card-btngrup h6 {
+  margin-bottom: 0;
+  color: var(--zx-violet);
+  text-align: center;
+}
+.wrapper .cards img {
+  width: 90%;
+  padding: 0;
+  border: 2px solid var(--zx-violet);
+  border-radius: 8px;
+  margin: 0;
+}
+
+.wrapper .card-item {
+  color: var(--zx-violet);
+  background: none;
+  border: none;
+}
+.wrapper .card-btngrup {
+  background: var(--text-steal);
+}
+
+.wrapper .card-btngrup button {
+  background: var(--zx-violet);
+  width: 1.8rem;
+  height: 1.8rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: larger;
+  color: var(--text-white);
+}
+
+.wrapper .card-btngrup button:active {
+  background: var(--zx-yellow);
+  color: var(--zx-violet);
+}
+.totasssssl h6 {
+  font-size: 1.5rem;
+  color: var(--zx-violet);
+}
+
+.subtotal {
+  border-top: 2px solid var(--zx-violet);
+  padding: 1rem 0;
+}
+.subtotal h6,
+.subtotal h4 {
+  color: var(--zx-violet);
+}
+
+.subtotal button {
+  color: var(--text-white);
+  border: 2px solid var(--zx-yellow);
+  border-radius: 1rem;
+  width: 6rem;
+  display: flex;
+  justify-content: center;
+  transition: 0.3s ease;
+  align-items: center;
+}
+
+.subtotal button.btn-proses {
+  background: var(--zx-green);
+}
+.subtotal button.btn-clear {
+  background: var(--zx-red);
+}
+
+.subtotal button.btn-struk {
+  background: var(--zx-violet);
+}
+.subtotal button.btn-proses:hover,
+.subtotal button.btn-struk:hover,
+.subtotal button.btn-clear:hover {
+  color: var(--text-white);
+  border: 2px solid var(--zx-yellow);
+  border-radius: 1rem;
+  transform: scale(0.9);
+  transition: 0.3s ease;
+}
+
+.subtotal button.btn-proses:active,
+.subtotal button.btn-struk:active,
+.subtotal button.btn-clear:active {
+  color: var(--zx-violet);
+  border: 2px solid var(--zx-violet);
+  border-radius: 1rem;
+}

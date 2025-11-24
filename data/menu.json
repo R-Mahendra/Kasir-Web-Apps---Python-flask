@@ -1,0 +1,152 @@
+{
+  "Makanan": [
+    {
+      "nama":"Nasi goreng",
+      "price":23000,
+      "id":"Mkn001",
+      "img":"https://i.ibb.co.com/200HRDjR/MK001.jpg"
+    },
+    {
+      "nama":"Rice bowl sweet",
+      "price":25000,
+      "id":"Mkn002",
+      "img":"https://i.ibb.co.com/1GJXTWLg/MK002.jpg"
+    },
+    {
+      "nama":"Rice bowl chicken",
+      "price":25000,
+      "id":"Mkn003",
+      "img":"https://i.ibb.co.com/dwH1zdr0/MK003.jpg"
+    },
+    {
+      "nama":"Rice bowl black",
+      "price":30000,
+      "id":"Mkn004",
+      "img":"https://i.ibb.co.com/1YTBCMBM/MK004.jpg"
+    },
+    {
+      "nama":"Rice bowl beef",
+      "price":35000,
+      "id":"Mkn005",
+      "img":"https://i.ibb.co.com/xPPkNgN/MK005.jpg"
+    },
+    {
+      "nama":"spaghetti bolognese",
+      "price":25000,
+      "id":"Mkn006",
+      "img":"https://i.ibb.co.com/vxKmN4v2/MK006.jpg"
+    },
+    {
+      "nama":"Sandwich",
+      "price":30000,
+      "id":"Mkn007",
+      "img":"https://i.ibb.co.com/JWzjw2VH/MK007.jpg"
+    },
+    {
+      "nama":"Steak",
+      "price":50000,
+      "id":"Mkn008",
+      "img":"https://i.ibb.co.com/67mDNfwM/MK008.jpg"
+    }
+  ],
+  "Minuman": [
+    {
+      "nama":"Lemon tea",
+      "price":20000,
+      "id":"Mn001",
+      "img":"https://i.ibb.co.com/hb95hbt/MN001.jpg"
+    },
+    {
+      "nama":"Americano",
+      "price":25000,
+      "id":"Mn002",
+      "img":"https://i.ibb.co.com/ccF0h7hk/MN002jpg.jpg"
+    },
+    {
+      "nama":"Matcha latte",
+      "price":35000,
+      "id":"Mn003",
+      "img":"https://i.ibb.co.com/tywFbNk/MN003.jpg"
+    },
+    {
+      "nama":"Cappucino",
+      "price":30000,
+      "id":"Mn004",
+      "img":"https://i.ibb.co.com/GfPXHKb5/MN004.jpg"
+    },
+    {
+      "nama":"Salted caramel",
+      "price":35000,
+      "id":"Mn005",
+      "img":"https://i.ibb.co.com/YBfBTLKj/MN005.jpg"
+    },
+    {
+      "nama":"Chocolatte",
+      "price":38000,
+      "id":"Mn006",
+      "img":"https://i.ibb.co.com/mCz4Lh6K/MN006.jpg"
+    },
+    {
+      "nama":"Splash tea",
+      "price":23000,
+      "id":"Mn007",
+      "img":"https://i.ibb.co.com/Lz3S227n/MN007.jpg"
+    },
+    {
+      "nama":"Kopi tubruk",
+      "price":20000,
+      "id":"Mn008",
+      "img":"https://i.ibb.co.com/V0smLZYb/MN008.jpg"
+    }
+  ],
+  "Makanan ringan": [
+    {
+      "nama":"Dimsum",
+      "price":30000,
+      "id":"Mr001",
+      "img":"https://i.ibb.co.com/m5Tdqyr6/MR001.jpg"
+    },
+    {
+      "nama":"Frienchie fries",
+      "price":20000,
+      "id":"Mr002",
+      "img":"https://i.ibb.co.com/9Hqkpctd/MR002.jpg"
+    },
+    {
+      "nama":"Banana pastry",
+      "price":25000,
+      "id":"Mr003",
+      "img":"https://i.ibb.co.com/6qCqr4y/MR003.jpg"
+    },
+    {
+      "nama":"Cromboloni",
+      "price":25000,
+      "id":"Mr004",
+      "img":"https://i.ibb.co.com/Xvnv87s/MR004.jpg"
+    },
+    {
+      "nama":"Souffle pancake",
+      "price":25000,
+      "id":"Mr005",
+      "img":"https://i.ibb.co.com/271DTqRT/MR005.jpg"
+    },
+    {
+      "nama":"Croissant",
+      "price":30000,
+      "id":"Mr006",
+      "img":"https://i.ibb.co.com/zVNP7gJp/MR006.jpg"
+    },
+    {
+      "nama":"Croffle",
+      "price":30000,
+      "id":"Mr007",
+      "img":"https://i.ibb.co.com/Q74jZJ83/MR007.jpg"
+    },
+    {
+      "nama":"Churros",
+      "price":30000,
+      "id":"Mr00",
+      "img":"https://i.ibb.co.com/xtwcVjgX/MR008.jpg"
+    }
+  ]
+}

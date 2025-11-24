@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Reza Mahendra - Zhaenx" />
+    <meta name="description" content="kasir Apps Python Flask" />
+    <meta name="og::description" content="kasir Apps Python Flask" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:type" content="website">
+    <meta property="og:image" itemprop="image" content="">
+    <meta property="og:site_name" content="Zhaenx">
+    <link rel="icon" type="image/x-icon" href="/static/img/icons/favicon.ico">
+    <link rel="icon" href="/static/img/icons/logo.png" sizes="" type="image/png">
+    <link rel="apple-touch-icon" href="/static/img/icons/logo.png" sizes="any" type="image/png">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/static/img/icons/logo.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/static/img/icons/logo.png">
+    <title>Kasir Web Apps - Kelompok 4</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top p-2">
+      <div class="logo">
+        <img src="/static/img/BSI.png" class="img-thumbnail" alt="" />
+        <img src="/static/img/kdk.jpg" class="img-thumbnail mx-3" alt="" />
+        <a class="navbar-brand" href="#">Kelompok<span class="kelompok"> 4</span></a>
+      </div>
+      <div class="container">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#zxNavlist" aria-controls="zxNavlist" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="zxNavlist">
+          <ul class="navbar-nav ms-auto mx-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="#Menu">Menu</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#Team">Our Team</a>
+            </li>
+          </ul>
+          <div class="navsrc m-2 position-relative">
+            <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">Troli <i class="bi bi-cart4 fs-4"></i></button>
+            <div class="jumlahcart" id="jumlahcart">
+              <span>{{ session.get('cart_count', 0) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <section id="Menu">
+      <div class="container">
+        <div class="row d-flex justify-content-center align-items-center">
+          {% set icons = { 
+            "Makanan": "bi-egg-fried",
+            "Minuman": "bi-cup-straw",
+            "Makanan ringan": "bi-emoji-smile" } %} 
+          {% for kategori, items in menu.items() %}
+          <div class="col-lg-12">
+            <h1 class="text-center">
+              <i class="bi {{ icons.get(kategori, 'bi-box') }}"></i> {{ kategori }}
+              <span class="grs"></span>
+            </h1>
+          </div>
+          {% for item in items %}
+          <div class="col-lg-3 mb-4">
+            <div class="card d-flex justify-content-center align-items-center">
+              {% if item.img %}
+              <img src="{{ item.img }}" class="img-thumbnail" alt="{{ item.nama }}" />
+              {% else %}
+              <img src="/static/default.jpg" class="img-thumbnail" alt="no-image" />
+              {% endif %}
+              <div class="card-body p-2 text-center">
+                <h5 class="card-title">~ {{ item.nama }} ~</h5>
+                <h5 class="card-text mb-2" id="hargaMenu"> Rp {{ "{:,.0f}".format(item.price)}}</h5>
+                <a href="#" class="btn btn-cart" data-id="{{ item.id }}" data-nama="{{ item.nama }}" data-price="{{ item.price }}" data-img="{{ item.img }}"> Add to cart </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %} {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <div class="offcanvas offcanvas-end canvas-parent" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel" data-bs-scroll="true" data-bs-backdrop="false">
+      <div class="offcanvas-header canvas-header d-flex justify-content-between align-items-center">
+        <h4 class="offcanvas-title" id="offcanvasRightLabel">Struk Pembayaran</h4>
+        <button type="button" class="btn-closes" data-bs-dismiss="offcanvas">
+          <i class="bi bi-x-square-fill"></i>
+        </button>
+      </div>
+
+      <div class="offcanvas-body canvas-body">
+        <!-- FORM -->
+        <div class="card-form d-flex justify-content-between align-items-center mb-4">
+          <div class="mb-0 col-lg-6">
+            <label class="form-label"> <i class="bi bi-people-fill"></i> Nama Pembeli : </label>
+            <input type="text" class="form-control" id="inputNamaPembeli" placeholder="Input Nama..." />
+          </div>
+
+          <div class="mb-0 col-lg-5">
+            <label class="form-label"> <i class="bi bi-coin"></i> Bayar (Cash) Rp : </label>
+            <input type="text" class="form-control" id="inputCash" placeholder="Input Jumlah Uang..." />
+          </div>
+        </div>
+
+        <!-- CART WRAPPER -->
+        <div class="wrapper" id="wrapper"></div>
+        <div class="totasssssl d-flex p-2">
+          <h6 class="me-3 mb-0">Total :</h6>
+          <h6 class="mb-0" id="testTotal"></h6>
+        </div>
+
+        <!-- TOTAL -->
+        <div class="subtotal">
+          <h4 class="text-center"><i class="bi bi-wallet"></i> Rincian Total</h4>
+          <div class="container mt-4">
+            <div class="row d-flex justify-content-center align-items-center">
+              <div class="col-lg-6">
+                <h6>Subtotal :</h6>
+              </div>
+              <div class="col-lg-6">
+                <h6 class="text-end" id="Subtotal">-</h6>
+              </div>
+            </div>
+            <div class="row d-flex justify-content-between align-items-center">
+              <div class="col-lg-6">
+                <h6>PPN(10%) :</h6>
+              </div>
+              <div class="col-lg-6">
+                <h6 class="text-end" id="ppn">-</h6>
+              </div>
+            </div>
+            <div class="row d-flex justify-content-between align-items-center">
+              <div class="col-lg-6">
+                <h6>Diskon :</h6>
+              </div>
+              <div class="col-lg-6">
+                <h6 class="text-end" id="diskon">0</h6>
+              </div>
+            </div>
+            <div class="row d-flex justify-content-between align-items-center">
+              <div class="col-lg-6">
+                <h6>Total :</h6>
+              </div>
+              <div class="col-lg-6">
+                <h6 class="text-end" id="total">-</h6>
+              </div>
+            </div>
+            <div class="row d-flex justify-content-between align-items-center">
+              <div class="col-lg-6">
+                <h6>Uang Bayar :</h6>
+              </div>
+              <div class="col-lg-6">
+                <h6 class="text-end" id="uangBayar">-</h6>
+              </div>
+            </div>
+            <div class="row d-flex justify-content-between align-items-center">
+              <div class="col-lg-6">
+                <h6>Kembalian :</h6>
+              </div>
+              <div class="col-lg-6">
+                <h6 class="text-end" id="kembalian">-</h6>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-4 d-flex justify-content-center align-items-center">
+            <div class="col-lg-4 d-flex justify-content-center align-items-center">
+              <button type="button" class="btn btn-proses">Proses</button>
+            </div>
+            <div class="col-lg-4 d-flex justify-content-center align-items-center">
+              <button type="button" class="btn btn-struk">Struk</button>
+            </div>
+            <div class="col-lg-4 d-flex justify-content-center align-items-center">
+              <button type="button" class="btn btn-clear">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Team Styyle -->
+    <section id="Team">
+      <div class="container">
+        <h1 class="h1team">Our Team</h1>
+        <div class="row d-flex justify-content-center align-items-center">
+          <div class="col-lg-4 mb-3 zhx">
+            <div class="card d-flex justify-content-center align-items-center">
+              <img src="/static/img/z.png" class="img-thumbnail" alt="image" />
+              <div class="card-body text-center">
+                <p class="card-text">"Fullstack bukan sekadar tahu semuanya — tapi ngerti kapan harus ngoprek, kapan harus nge-hack, kapan harus ngopi."</p>
+                <h5>Reza Mahendra | 17250007</h5>
+                <h5>( Penetration Tester Web Apps )</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 mb-3 ftr">
+            <div class="card d-flex justify-content-center align-items-center">
+              <img src="/static/img/fitri-2.jpg" class="img-thumbnail" alt="image" />
+              <div class="card-body text-center">
+                <p class="card-text">"Designer bukan cuma pilih warna — tapi tahu kapan rewel, kapan panik, kapan menyalahkan font nakal itu."</p>
+                <h5>Fitria Haryani | 17250012</h5>
+                <h5>( UI/UX Designer )</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row d-flex justify-content-center align-items-center">
+          <div class="col-lg-4 m-0 rfk">
+            <div class="card d-flex justify-content-center align-items-center">
+              <img src="/static/img/ripki.jpg" class="img-thumbnail" alt="image" />
+              <div class="card-body text-center">
+                <p class="card-text">"Backend bukan hanya API — tapi paham kapan query meledak, kapan server ngambek, kapan menyalahkan caching nakal."</p>
+                <h5>Rifqy Ardian Adinata | 17250522</h5>
+                <h5>( Backend Web Development )</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 m-0 ndi">
+            <div class="card d-flex justify-content-center align-items-center">
+              <img src="/static/img/andi.jpg" class="img-thumbnail" alt="image" />
+              <div class="card-body text-center">
+                <p class="card-text">"DevOps bukan sekadar deploy — tapi sadar kapan pipeline roboh, kapan server drama, kapan pura-pura semuanya terkendali."</p>
+                <h5>Muhammad Bagas Triandy | 17250036</h5>
+                <h5>( DevOps Engineer)</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 m-0 cia">
+            <div class="card d-flex justify-content-center align-items-center">
+              <img src="/static/img/cia.jpg" class="img-thumbnail" alt="image" />
+              <div class="card-body text-center">
+                <p class="card-text">"Frontend bukan sekadar bikin cantik — tapi ngerti kapan nge-style, kapan nge-debug, kapan ngehindar dari CSS."</p>
+                <h5>Cheril Aprillia Putri | 17250385</h5>
+                <h5>( Frontend Web Development )</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://unpkg.com/scrollreveal"></script>
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
