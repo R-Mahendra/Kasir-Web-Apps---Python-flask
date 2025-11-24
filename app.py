@@ -1,10 +1,8 @@
-import json
-from flask import send_file, Flask, render_template, request, session, jsonify
+import json, io, datetime
+from flask import Flask, send_file, render_template, request, session, jsonify
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
-import io
-import datetime
 
 app = Flask(__name__)
 app.secret_key = "ZhaenxSecret"  # cookie
