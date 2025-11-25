@@ -61,7 +61,6 @@ function renderCart() {
   }
 
   wrapper.innerHTML = "";
-
   Object.values(cart).forEach((item) => {
     wrapper.innerHTML += `
       <div class="row d-flex justify-content-center align-items-center wrapper-row">
@@ -70,14 +69,12 @@ function renderCart() {
             <img src="${item.img}" class="img-thumbnail" alt="${item.nama}" />
           </div>
         </div>
-
         <div class="col-lg-4 d-flex justify-content-center align-items-center">
           <div class="card d-flex justify-content-center align-items-center card-item">
             <h6 class="mb-2">${item.nama}</h6>
             <h6>Rp ${formatRupiah(item.subtotal)}</h6>
           </div>
         </div>
-
         <div class="col-lg-4 d-flex justify-content-center align-items-center">
           <div class="card card-btngrup mx-auto border-0">
             <div class="btn-group border-0 d-flex justify-content-center align-items-center">
@@ -91,8 +88,6 @@ function renderCart() {
           </div>
         </div>
       </div>
-
-        
       </div>`;
   });
 }
@@ -351,18 +346,49 @@ function downloadStruk() {
   });
 }
 
+// ===================================== LOAD CART FROM SERVER
+function loadCartFromServer() {
+  fetch("/cart/get", {
+    method: "GET",
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Gagal load cart");
+      }
+      return res.json();
+    })
+    .then((data) => {
+      // Update cart display
+      updateCartDisplay(data.cart);
+
+      // Update cart count badge
+      const cartBadge = document.getElementById("jumlahcart");
+      if (cartBadge) {
+        cartBadge.innerHTML = `<span>${data.count}</span>`;
+      }
+
+      // Update subtotal
+      const testTotal = document.getElementById("testTotal");
+      if (testTotal) {
+        testTotal.innerText = data.count > 0 ? `Rp ${formatRupiah(data.subtotal)}` : "-";
+      }
+
+      console.log("Cart loaded from server:", data.count, "items");
+    })
+    .catch((error) => {
+      console.error("Error loading cart:", error);
+      // Jika error, tetap tampilkan cart kosong
+      cart = {};
+      renderCart();
+    });
+}
+
 // ===================================== INITIALIZE
 document.addEventListener("DOMContentLoaded", () => {
   initClearButton();
-
-  // kalau cart dari server ada, render ulang
-  if (serverCart && serverCart.length > 0) {
-    updateCartDisplay(serverCart);
-  }
-
-  console.log("Cart loaded dari server:", serverCart);
+  loadCartFromServer(); // Load cart dari server saat page load
+  console.log("Cart system initialized");
 });
-
 // ================================================Start tombol Navbar============================================================== //
 // Mengambil elemen navbar dan semua tautan di dalamnya
 const navbar = document.querySelector(".navbar");

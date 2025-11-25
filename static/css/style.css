@@ -285,8 +285,9 @@ section {
   transition: 0.3s ease-in;
 }
 
-#Team .card-body h5 {
+#Team .card-body h6 {
   color: var(--zx-violet);
+  margin-bottom: 0;
 }
 
 .canvas-parent {

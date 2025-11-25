@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 
 app = Flask(__name__)
-app.secret_key = "ZhaenxSecret"
+app.secret_key = "53616c7465645f5ff22da9cb2932309bc5d27f5fb2f59d57bca3150476f82a19"
 
 # ===================================== CONSTANTS
 PAJAK = Decimal("0.10")
@@ -181,14 +181,7 @@ def checkout():
         diskon, ppn, total = hitung_total(subtotal)
 
         if cash < total:
-            return (
-                jsonify(
-                    {
-                        "error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"
-                    }
-                ),
-                400,
-            )
+            return (jsonify({"error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"}),400,)
 
         kembalian = cash - total
 
@@ -356,6 +349,27 @@ def download_struk():
     except Exception as e:
         app.logger.error(f"Error in download_struk: {str(e)}")
         return jsonify({"error": "Gagal membuat struk"}), 500
+
+
+@app.route("/cart/get", methods=["GET"])
+def cart_get():
+    """Get current cart from session"""
+    try:
+        cart = session.get("jumlahcart", [])
+        subtotal, diskon, ppn, total = calculate_totals(cart)
+
+        return jsonify(
+            {
+                "cart": cart,
+                "count": sum(i["qty"] for i in cart),
+                "subtotal": subtotal,
+                "diskon": diskon,
+                "ppn": ppn,
+                "total": total,
+            }
+        )
+    except Exception as e:
+        app.logger.error(f"Error in cart_get: {str(e)}")
 
 
 @app.route("/")
