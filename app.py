@@ -181,7 +181,14 @@ def checkout():
         diskon, ppn, total = hitung_total(subtotal)
 
         if cash < total:
-            return (jsonify({"error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"}),400,)
+            return (
+                jsonify(
+                    {
+                        "error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"
+                    }
+                ),
+                400,
+            )
 
         kembalian = cash - total
 
