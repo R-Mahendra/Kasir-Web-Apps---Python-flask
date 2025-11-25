@@ -64,35 +64,35 @@ function renderCart() {
 
   Object.values(cart).forEach((item) => {
     wrapper.innerHTML += `
-      <div class="row d-flex justify-content-between align-items-center wrapper-row">
-        <div class="col-lg-2">
-          <div class="cards d-flex justify-content-between align-items-center">
+      <div class="row d-flex justify-content-center align-items-center wrapper-row">
+        <div class="col-lg-4">
+          <div class="cards">
             <img src="${item.img}" class="img-thumbnail" alt="${item.nama}" />
           </div>
         </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-4 d-flex justify-content-center align-items-center">
           <div class="card d-flex justify-content-center align-items-center card-item">
             <h6 class="mb-2">${item.nama}</h6>
             <h6>Rp ${formatRupiah(item.subtotal)}</h6>
           </div>
         </div>
 
-        <div class="col-lg-3">
-          <div class="card card-btngrup border-0">
-            <div class="btn-group border-0 d-flex justify-content-between align-items-center">
-              <button class="btn btn-plus" data-id="${item.id}">+</button>
+        <div class="col-lg-4 d-flex justify-content-center align-items-center">
+          <div class="card card-btngrup mx-auto border-0">
+            <div class="btn-group border-0 d-flex justify-content-center align-items-center">
+              <button type="button" class="btn btn-plus" data-id="${item.id}">+</button>
               <h6 class="mx-2">${item.qty}</h6>
-              <button class="btn btn-minus" data-id="${item.id}">-</button>
+              <button type="button" class="btn btn-minus" data-id="${item.id}">-</button>
             </div>
           </div>
+          <div class="ps">
+            <button type="button" class="btn btn-remove" data-id="${item.id}">Hapus</button>
+          </div>
         </div>
+      </div>
 
-        <div class="col-lg-2">
-          <button class="btn btn-danger btn-sm btn-remove" data-id="${item.id}">
-            <i class="fas fa-trash"></i> Hapus
-          </button>
-        </div>
+        
       </div>`;
   });
 }
@@ -164,12 +164,10 @@ document.addEventListener("click", (e) => {
     const id = e.target.dataset.id;
     if (id) updateCart("plus", id);
   }
-
   if (e.target.classList.contains("btn-minus")) {
     const id = e.target.dataset.id;
     if (id) updateCart("minus", id);
   }
-
   if (e.target.classList.contains("btn-remove")) {
     const id = e.target.dataset.id;
     if (id && confirm("Hapus item ini dari keranjang?")) {
@@ -356,7 +354,13 @@ function downloadStruk() {
 // ===================================== INITIALIZE
 document.addEventListener("DOMContentLoaded", () => {
   initClearButton();
-  console.log("Cart system initialized");
+
+  // kalau cart dari server ada, render ulang
+  if (serverCart && serverCart.length > 0) {
+    updateCartDisplay(serverCart);
+  }
+
+  console.log("Cart loaded dari server:", serverCart);
 });
 
 // ================================================Start tombol Navbar============================================================== //

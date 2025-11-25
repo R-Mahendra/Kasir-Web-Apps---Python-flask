@@ -14,7 +14,6 @@
   width: 0.5rem;
 }
 
-
 ::-webkit-scrollbar-thumb {
   background-color: var(--zx-yellow);
   border-radius: 5px;
@@ -354,7 +353,7 @@ section {
   text-align: center;
 }
 .wrapper .cards img {
-  width: 90%;
+  width: 50%;
   padding: 0;
   border: 2px solid var(--zx-violet);
   border-radius: 8px;
@@ -380,6 +379,20 @@ section {
   font-size: larger;
   color: var(--text-white);
 }
+
+.wrapper .btn-remove,
+.wrapper .btn-remove:active {
+  background: var(--zx-red);
+  color: var(--text-white);
+  width: 4rem;
+  height: 2rem;
+  padding: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+}
+
 
 .wrapper .card-btngrup button:active {
   background: var(--zx-yellow);
