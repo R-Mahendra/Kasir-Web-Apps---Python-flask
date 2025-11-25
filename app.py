@@ -1,140 +1,198 @@
-import json, io, datetime
+import json
+import io
+import datetime
+from decimal import Decimal
 from flask import Flask, send_file, render_template, request, session, jsonify
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 
 app = Flask(__name__)
-app.secret_key = "ZhaenxSecret"  # cookie
+app.secret_key = "ZhaenxSecret"
+
+# ===================================== CONSTANTS
+PAJAK = Decimal("0.10")
+DISKON = Decimal("0.10")
 
 
-# ===================================== LOAD MENU SEKALI SAJA (GLOBAL)
-with open("data/menu.json", "r", encoding="utf-8") as file:
-    menu = json.load(file)
+# ===================================== LOAD DATA JSON (API)
+def load_menu():
+    """Load menu with error handling"""
+    try:
+        with open("data/menu.json", "r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        app.logger.error("menu.json not found")
+        return {}
+    except json.JSONDecodeError:
+        app.logger.error("Invalid JSON in menu.json")
+        return {}
 
-# ============= CONFIG =============
-PAJAK = 0.10  # 10%
-DISKON = 0.10  # 10%
+
+menu = load_menu()
 
 
-# =====================================
+# ===================================== HELPER FUNCTIONS
 def hitung_total(subtotal):
-    diskon = int(subtotal * DISKON)  # 10% dari subtotal
-    dpp = subtotal - diskon  # harga setelah diskon
-    ppn = int(dpp * PAJAK)  # pajak setelah diskon
+    """Calculate discount, tax, and total"""
+    subtotal = Decimal(str(subtotal))
+    diskon = int(subtotal * DISKON)
+    dpp = subtotal - diskon
+    ppn = int(dpp * PAJAK)
     total = dpp + ppn
-    return diskon, ppn, total
+    return int(diskon), int(ppn), int(total)
 
 
-# HITUNG TOTAL OTOMATIS CART
 def calculate_totals(cart):
+    """Calculate all totals in cart"""
     subtotal = sum(int(item["price"]) * int(item["qty"]) for item in cart)
     diskon, ppn, total = hitung_total(subtotal)
     return subtotal, diskon, ppn, total
 
 
+def find_item_in_cart(cart, item_id):
+    """Find item in cart by id"""
+    for item in cart:
+        if str(item["id"]) == str(item_id):
+            return item
+    return None
+
+
+def find_menu_item(item_id):
+    """Find menu item by id"""
+    for kategori, items in menu.items():
+        for m in items:
+            if str(m["id"]) == str(item_id):
+                return m
+    return None
+
+
+def update_session_cart(cart):
+    """Update session cart and count"""
+    session["jumlahcart"] = cart
+    session["cart_count"] = sum(i["qty"] for i in cart)
+    session.modified = True
+
+
+# ===================================== ROUTES
 @app.route("/cart/update", methods=["POST"])
 def cart_update():
-    data = request.get_json()
-    action = data.get("action")
-    item_id = str(data.get("id"))
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid request"}), 400
 
-    cart = session.get("jumlahcart", [])
+        action = data.get("action")
+        item_id = data.get("id")
 
-    # cari item di cart
-    target = None
-    for item in cart:
-        if str(item["id"]) == item_id:
-            target = item
-            break
+        if not action or item_id is None:
+            return jsonify({"error": "Missing parameters"}), 400
 
-    # handle ADD
-    if action == "add":
-        if not target:
-            # cari data di menu.json
-            for kategori, items in menu.items():
-                for m in items:
-                    if str(m["id"]) == item_id:
-                        cart.append(
-                            {
-                                "id": m["id"],
-                                "nama": m["nama"],
-                                "price": m["price"],
-                                "img": m["img"],
-                                "qty": 1,
-                                "subtotal": m["price"],
-                            }
-                        )
-                        break
-        else:
+        cart = session.get("jumlahcart", [])
+        target = find_item_in_cart(cart, item_id)
+
+        # Handle ADD
+        if action == "add":
+            if not target:
+                menu_item = find_menu_item(item_id)
+                if not menu_item:
+                    return jsonify({"error": "Item not found"}), 404
+
+                cart.append(
+                    {
+                        "id": menu_item["id"],
+                        "nama": menu_item["nama"],
+                        "price": menu_item["price"],
+                        "img": menu_item["img"],
+                        "qty": 1,
+                        "subtotal": menu_item["price"],
+                    }
+                )
+            else:
+                target["qty"] += 1
+                target["subtotal"] = target["qty"] * target["price"]
+
+        # Handle PLUS
+        elif action == "plus":
+            if not target:
+                return jsonify({"error": "Item not in cart"}), 404
             target["qty"] += 1
             target["subtotal"] = target["qty"] * target["price"]
 
-    # handle PLUS
-    if action == "plus" and target:
-        target["qty"] += 1
-        target["subtotal"] = target["qty"] * target["price"]
+        # Handle MINUS
+        elif action == "minus":
+            if not target:
+                return jsonify({"error": "Item not in cart"}), 404
+            target["qty"] -= 1
+            if target["qty"] <= 0:
+                cart.remove(target)
+            else:
+                target["subtotal"] = target["qty"] * target["price"]
 
-    # handle MINUS
-    if action == "minus" and target:
-        target["qty"] -= 1
-        if target["qty"] <= 0:
+        # Handle REMOVE
+        elif action == "remove":
+            if not target:
+                return jsonify({"error": "Item not in cart"}), 404
             cart.remove(target)
+
         else:
-            target["subtotal"] = target["qty"] * target["price"]
+            return jsonify({"error": "Invalid action"}), 400
 
-    # handle REMOVE
-    if action == "remove" and target:
-        cart.remove(target)
+        update_session_cart(cart)
+        subtotal, diskon, ppn, total = calculate_totals(cart)
 
-    session["jumlahcart"] = cart
-    session["cart_count"] = sum(i["qty"] for i in cart)
+        return jsonify(
+            {
+                "cart": cart,
+                "count": sum(i["qty"] for i in cart),
+                "subtotal": subtotal,
+                "diskon": diskon,
+                "ppn": ppn,
+                "total": total,
+            }
+        )
 
-    subtotal, diskon, ppn, total = calculate_totals(cart)
-
-    return jsonify(
-        {
-            "cart": cart,
-            "count": sum(i["qty"] for i in cart),
-            "subtotal": subtotal,
-            "diskon": diskon,
-            "ppn": ppn,
-            "total": total,
-        }
-    )
+    except Exception as e:
+        app.logger.error(f"Error in cart_update: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/checkout", methods=["POST"])
 def checkout():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid request"}), 400
 
-    nama = data.get("nama")
-    cash = int(data.get("cash", 0))
+        nama = data.get("nama", "").strip()
+        if not nama:
+            return jsonify({"error": "Nama tidak boleh kosong"}), 400
 
-    cart = session.get("jumlahcart", [])
+        try:
+            cash = int(data.get("cash", 0))
+        except (ValueError, TypeError):
+            return jsonify({"error": "Jumlah uang tidak valid"}), 400
 
-    # Hitung subtotal
-    subtotal = 0
-    for item in cart:
-        subtotal += int(item["price"]) * int(item["qty"])
+        cart = session.get("jumlahcart", [])
+        if not cart:
+            return jsonify({"error": "Keranjang kosong"}), 400
 
-    diskon, ppn, total = hitung_total(subtotal)
+        subtotal = sum(int(item["price"]) * int(item["qty"]) for item in cart)
+        diskon, ppn, total = hitung_total(subtotal)
 
-    kembalian = cash - total
+        if cash < total:
+            return (
+                jsonify(
+                    {
+                        "error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"
+                    }
+                ),
+                400,
+            )
 
-    # SIMPAN SEMENTARA KE SESSION (opsional)
-    session["pembeli"] = {
-        "nama": nama,
-        "cash": cash,
-        "subtotal": subtotal,
-        "ppn": ppn,
-        "diskon": diskon,
-        "total": total,
-        "kembalian": kembalian,
-    }
+        kembalian = cash - total
 
-    return jsonify(
-        {
+        session["pembeli"] = {
             "nama": nama,
             "cash": cash,
             "subtotal": subtotal,
@@ -143,122 +201,161 @@ def checkout():
             "total": total,
             "kembalian": kembalian,
         }
-    )
+        session.modified = True
+
+        return jsonify(
+            {
+                "nama": nama,
+                "cash": cash,
+                "subtotal": subtotal,
+                "ppn": ppn,
+                "diskon": diskon,
+                "total": total,
+                "kembalian": kembalian,
+            }
+        )
+
+    except Exception as e:
+        app.logger.error(f"Error in checkout: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/cart/clear", methods=["POST"])
 def cart_clear():
     session["jumlahcart"] = []
     session["cart_count"] = 0
+    session.modified = True
     return jsonify({"success": True})
 
 
 @app.route("/download_struk", methods=["POST"])
 def download_struk():
-    cart = session.get("jumlahcart", [])
-    nama = request.json.get("nama")
-    cash = int(request.json.get("cash", 0))
-
-    # Hitung total
-    subtotal = sum(item["price"] * item["qty"] for item in cart)
-    diskon, ppn, total = hitung_total(subtotal)
-    kembalian = cash - total
-
-    # Membuat PDF ke memory (buffer)
-    buffer = io.BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
-
-    # ===== HEADER =====
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawCentredString(300, 725, "Restoran Kelompok 4")
-
-    # LOGO
     try:
-        logo = ImageReader("static/img/logo.png")
-        pdf.drawImage(
-            logo, (595 / 2) - 40, 750, width=80, height=80, preserveAspectRatio=True
+        cart = session.get("jumlahcart", [])
+        if not cart:
+            return jsonify({"error": "Keranjang kosong"}), 400
+
+        data = request.get_json()
+        nama = data.get("nama", "").strip()
+
+        try:
+            cash = int(data.get("cash", 0))
+        except (ValueError, TypeError):
+            return jsonify({"error": "Jumlah uang tidak valid"}), 400
+
+        # Hitung total
+        subtotal = sum(item["price"] * item["qty"] for item in cart)
+        diskon, ppn, total = hitung_total(subtotal)
+        kembalian = cash - total
+
+        if cash < total:
+            return jsonify({"error": "Uang tidak cukup"}), 400
+
+        # Membuat PDF ke memory (buffer)
+        buffer = io.BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=A4)
+
+        # ===== HEADER =====
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawCentredString(300, 725, "Restoran Kelompok 4")
+
+        # LOGO
+        try:
+            logo = ImageReader("static/img/logo.png")
+            pdf.drawImage(
+                logo, (595 / 2) - 40, 750, width=80, height=80, preserveAspectRatio=True
+            )
+        except Exception as e:
+            app.logger.warning(f"Logo not found: {str(e)}")
+
+        pdf.setFont("Helvetica", 10)
+        pdf.drawCentredString(
+            300,
+            695,
+            "Cikarang Square, Jl. Cibarusah Raya No.168, Pasirsari, "
+            "Cikarang Sel, Kab.Bekasi, Jawa Barat 17550",
         )
-    except:
-        pass
 
-    pdf.setFont("Helvetica", 10)
-    pdf.drawCentredString(
-        300,
-        695,
-        "Cikarang Square, Jl. Cibarusah Raya No.168, Pasirsari, Cikarang Sel, Kab.Bekasi, Jawa Barat 17550",
-    )
+        pdf.drawCentredString(
+            290, 682, f"Tanggal: {datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}"
+        )
 
-    pdf.drawCentredString(
-        290, 682, f"Tanggal: {datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}"
-    )
+        pdf.line(40, 670, 550, 670)
 
-    pdf.line(40, 670, 550, 670)
+        # ===== BODY =====
+        y = 650
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(40, y, f"Nama Pembeli: {nama}")
+        y -= 25
 
-    # ===== BODY =====
-    y = 650
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(40, y, f"Nama Pembeli: {nama}")
-    y -= 25
-
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(40, y, "Daftar Pembelian:")
-    y -= 20
-
-    pdf.setFont("Helvetica", 11)
-
-    for item in cart:
-        pdf.drawString(40, y, f"{item['nama']}  x{item['qty']}")
-        pdf.drawRightString(550, y, f"Rp {item['price'] * item['qty']:,.2f}")
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(40, y, "Daftar Pembelian:")
         y -= 20
 
-    pdf.line(40, y, 550, y)
-    y -= 25
+        pdf.setFont("Helvetica", 11)
 
-    # ===== TOTAL =====
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(40, y, "Subtotal:")
-    pdf.drawRightString(550, y, f"Rp {subtotal:,.2f}")
-    y -= 20
+        for item in cart:
+            pdf.drawString(40, y, f"{item['nama']}  x{item['qty']}")
+            pdf.drawRightString(550, y, f"Rp {item['price'] * item['qty']:,}")
+            y -= 20
 
-    pdf.drawString(40, y, "Diskon 10%:")
-    pdf.drawRightString(550, y, f"Rp {diskon:,.2f}")
-    y -= 20
+            # Check if need new page
+            if y < 100:
+                pdf.showPage()
+                y = 750
 
-    pdf.drawString(40, y, "PPN 10%:")
-    pdf.drawRightString(550, y, f"Rp {ppn:,.2f}")
-    y -= 20
+        pdf.line(40, y, 550, y)
+        y -= 25
 
-    pdf.drawString(40, y, "Total:")
-    pdf.drawRightString(550, y, f"Rp {total:,.2f}")
-    y -= 20
+        # ===== TOTAL =====
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(40, y, "Subtotal:")
+        pdf.drawRightString(550, y, f"Rp {subtotal:,}")
+        y -= 20
 
-    pdf.drawString(40, y, "Uang Bayar:")
-    pdf.drawRightString(550, y, f"Rp {cash:,.2f}")
-    y -= 20
+        pdf.drawString(40, y, "Diskon 10%:")
+        pdf.drawRightString(550, y, f"Rp {diskon:,}")
+        y -= 20
 
-    pdf.drawString(40, y, "Kembalian:")
-    pdf.drawRightString(550, y, f"Rp {kembalian:,.2f}")
-    y -= 50
+        pdf.drawString(40, y, "PPN 10%:")
+        pdf.drawRightString(550, y, f"Rp {ppn:,}")
+        y -= 20
 
-    pdf.drawString(40, y, "_" * 76)
-    y -= 20
-    pdf.drawString(200, y, "Terimakasih sudah berkunjung.")
+        pdf.drawString(40, y, "Total:")
+        pdf.drawRightString(550, y, f"Rp {total:,}")
+        y -= 20
 
-    pdf.showPage()
-    pdf.save()
+        pdf.drawString(40, y, "Uang Bayar:")
+        pdf.drawRightString(550, y, f"Rp {cash:,}")
+        y -= 20
 
-    buffer.seek(0)
+        pdf.drawString(40, y, "Kembalian:")
+        pdf.drawRightString(550, y, f"Rp {kembalian:,}")
+        y -= 50
 
-    # AUTO FILENAME: struk-tanggal-bulan-tahun.pdf
-    tanggal = datetime.datetime.now().strftime(("%d-%m-%Y"))
-    fileDownload = f"struk-{tanggal}.pdf"
+        pdf.drawString(40, y, "_" * 76)
+        y -= 20
+        pdf.drawString(200, y, "Terimakasih sudah berkunjung.")
 
-    return send_file(
-        buffer,
-        mimetype="application/pdf",
-        as_attachment=True,
-        download_name=fileDownload,
-    )
+        pdf.showPage()
+        pdf.save()
+
+        buffer.seek(0)
+
+        # AUTO FILENAME
+        tanggal = datetime.datetime.now().strftime("%d-%m-%Y")
+        fileDownload = f"struk-{tanggal}.pdf"
+
+        return send_file(
+            buffer,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=fileDownload,
+        )
+
+    except Exception as e:
+        app.logger.error(f"Error in download_struk: {str(e)}")
+        return jsonify({"error": "Gagal membuat struk"}), 500
 
 
 @app.route("/")

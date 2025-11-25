@@ -1,71 +1,80 @@
 // ==========================================================
 
 let cart = {};
+let isProcessing = false; // Prevent double-click
 
+// ===================================== HELPER FUNCTIONS
+function showError(message) {
+  // Bisa diganti dengan toast notification yang lebih bagus
+  alert(message);
+}
+
+function showSuccess(message) {
+  alert(message);
+}
+
+function formatRupiah(angka) {
+  return angka.toLocaleString("id-ID");
+}
+
+function validateNama(nama) {
+  if (!nama || nama.trim() === "") {
+    showError("Nama pembeli tidak boleh kosong!");
+    return false;
+  }
+  if (nama.trim().length < 3) {
+    showError("Nama pembeli minimal 3 karakter!");
+    return false;
+  }
+  return true;
+}
+
+function validateCash(cash) {
+  if (!cash || isNaN(cash) || cash <= 0) {
+    showError("Jumlah uang tidak valid!");
+    return false;
+  }
+  return true;
+}
+
+// ===================================== UPDATE CART DISPLAY
 function updateCartDisplay(serverCart) {
   cart = {};
   serverCart.forEach((item) => {
     cart[item.id] = item;
   });
-
   renderCart();
 }
 
-// ADD TO CART button
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("btn-cart")) {
-    e.preventDefault();
-    const id = e.target.dataset.id;
-    updateCart("add", id);
-  }
-});
-
-// PLUS / MINUS / REMOVE
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("btn-plus")) {
-    updateCart("plus", e.target.dataset.id);
-  }
-  if (e.target.classList.contains("btn-minus")) {
-    updateCart("minus", e.target.dataset.id);
-  }
-  if (e.target.classList.contains("btn-remove")) {
-    updateCart("remove", e.target.dataset.id);
-  }
-});
-
-// CALL API
-function updateCart(action, id) {
-  fetch("/cart/update", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: action, id: id }),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      updateCartDisplay(data.cart);
-      document.getElementById("jumlahcart").innerHTML = `<span>${data.count}</span>`;
-    });
-}
-
+// ===================================== RENDER CART
 function renderCart() {
   const wrapper = document.getElementById("wrapper");
+
+  if (!wrapper) {
+    console.error("Element #wrapper tidak ditemukan");
+    return;
+  }
+
+  if (Object.keys(cart).length === 0) {
+    wrapper.innerHTML = '<div class="text-center py-5"><p class="text-muted">Keranjang kosong</p></div>';
+    return;
+  }
+
   wrapper.innerHTML = "";
 
   Object.values(cart).forEach((item) => {
     wrapper.innerHTML += `
       <div class="row d-flex justify-content-between align-items-center wrapper-row">
-
         <div class="col-lg-2">
           <div class="cards d-flex justify-content-between align-items-center">
-            
-            <img src="${item.img}" class="img-thumbnail" />
+            <img src="${item.img}" class="img-thumbnail" alt="${item.nama}" />
           </div>
         </div>
 
         <div class="col-lg-4">
           <div class="card d-flex justify-content-center align-items-center card-item">
             <h6 class="mb-2">${item.nama}</h6>
-            <h6>Rp ${item.subtotal.toLocaleString("id-ID")}</h6>
+            <h6>Rp ${formatRupiah(item.subtotal)}</h6>
           </div>
         </div>
 
@@ -78,90 +87,276 @@ function renderCart() {
             </div>
           </div>
         </div>
+
+        <div class="col-lg-2">
+          <button class="btn btn-danger btn-sm btn-remove" data-id="${item.id}">
+            <i class="fas fa-trash"></i> Hapus
+          </button>
+        </div>
       </div>`;
   });
 }
 
-// rincian bayyar
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("btn-proses")) {
-    prosesPembayaran();
-  }
-});
-
-function prosesPembayaran() {
-  const nama = document.getElementById("inputNamaPembeli").value;
-  const cash = document.getElementById("inputCash").value;
-
-  fetch("/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nama: nama, cash: cash }),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      document.getElementById("Subtotal").innerText = "Rp " + data.subtotal.toLocaleString("id-ID");
-      document.getElementById("ppn").innerText = "Rp " + data.ppn.toLocaleString("id-ID");
-      document.getElementById("diskon").innerText = "Rp " + data.diskon.toLocaleString("id-ID");
-      document.getElementById("total").innerText = "Rp " + data.total.toLocaleString("id-ID");
-      document.getElementById("uangBayar").innerText = "Rp " + data.cash.toLocaleString("id-ID");
-      document.getElementById("kembalian").innerText = "Rp " + data.kembalian.toLocaleString("id-ID");
-    });
-}
-// itung total otomatis
+// ===================================== UPDATE CART (UNIFIED FUNCTION)
 function updateCart(action, id) {
+  if (isProcessing) return;
+
+  isProcessing = true;
   fetch("/cart/update", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: action, id: id }),
   })
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) {
+        return res.json().then((err) => {
+          throw new Error(err.error || "Terjadi kesalahan");
+        });
+      }
+      return res.json();
+    })
     .then((data) => {
+      // Update cart display
       updateCartDisplay(data.cart);
-      document.getElementById("jumlahcart").innerHTML = `<span>${data.count}</span>`;
 
-      // UPDATE subtotal otomatis!!
-      document.getElementById("testTotal").innerText = "Rp " + data.subtotal.toLocaleString("id-ID");
+      // Update cart count badge
+      const cartBadge = document.getElementById("jumlahcart");
+      if (cartBadge) {
+        cartBadge.innerHTML = `<span>${data.count}</span>`;
+      }
+
+      // Update subtotal otomatis
+      const testTotal = document.getElementById("testTotal");
+      if (testTotal) {
+        testTotal.innerText = data.count > 0 ? `Rp ${formatRupiah(data.subtotal)}` : "-";
+      }
+
+      // Reset form pembayaran jika cart kosong
+      if (data.count === 0) {
+        resetPaymentForm();
+      }
+    })
+    .catch((error) => {
+      console.error("Error updating cart:", error);
+      showError(error.message || "Gagal mengupdate keranjang");
+    })
+    .finally(() => {
+      isProcessing = false;
     });
 }
 
-// clear
-document.querySelector(".btn-clear").addEventListener("click", () => {
+// ===================================== EVENT LISTENERS
+
+// ADD TO CART button
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("btn-cart")) {
+    e.preventDefault();
+    const id = e.target.dataset.id;
+    if (id) {
+      updateCart("add", id);
+    }
+  }
+});
+
+// PLUS / MINUS / REMOVE
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("btn-plus")) {
+    const id = e.target.dataset.id;
+    if (id) updateCart("plus", id);
+  }
+
+  if (e.target.classList.contains("btn-minus")) {
+    const id = e.target.dataset.id;
+    if (id) updateCart("minus", id);
+  }
+
+  if (e.target.classList.contains("btn-remove")) {
+    const id = e.target.dataset.id;
+    if (id && confirm("Hapus item ini dari keranjang?")) {
+      updateCart("remove", id);
+    }
+  }
+});
+
+// ===================================== PROSES PEMBAYARAN
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("btn-proses")) {
+    e.preventDefault();
+    prosesPembayaran();
+  }
+});
+
+function prosesPembayaran() {
+  if (isProcessing) return;
+
+  const nama = document.getElementById("inputNamaPembeli")?.value.trim();
+  const cashInput = document.getElementById("inputCash")?.value;
+  const cash = parseInt(cashInput);
+
+  // Validasi input
+  if (!validateNama(nama)) return;
+  if (!validateCash(cash)) return;
+
+  // Cek apakah cart kosong
+  if (Object.keys(cart).length === 0) {
+    showError("Keranjang masih kosong!");
+    return;
+  }
+
+  isProcessing = true;
+  fetch("/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nama: nama, cash: cash }),
+  })
+    .then((res) => {
+      if (!res.ok) {
+        return res.json().then((err) => {
+          throw new Error(err.error || "Terjadi kesalahan");
+        });
+      }
+      return res.json();
+    })
+    .then((data) => {
+      // Update rincian pembayaran
+      updateElement("Subtotal", `Rp ${formatRupiah(data.subtotal)}`);
+      updateElement("ppn", `Rp ${formatRupiah(data.ppn)}`);
+      updateElement("diskon", `Rp ${formatRupiah(data.diskon)}`);
+      updateElement("total", `Rp ${formatRupiah(data.total)}`);
+      updateElement("uangBayar", `Rp ${formatRupiah(data.cash)}`);
+      updateElement("kembalian", `Rp ${formatRupiah(data.kembalian)}`);
+
+      showSuccess("Pembayaran berhasil diproses!");
+    })
+    .catch((error) => {
+      console.error("Error processing payment:", error);
+      showError(error.message || "Gagal memproses pembayaran");
+    })
+    .finally(() => {
+      isProcessing = false;
+    });
+}
+
+function updateElement(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.innerText = value;
+  }
+}
+
+// ===================================== CLEAR CART
+function initClearButton() {
+  const clearBtn = document.querySelector(".btn-clear");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearCart);
+  }
+}
+
+function clearCart() {
+  if (!confirm("Hapus semua item di keranjang?")) return;
+
+  if (isProcessing) return;
+
+  isProcessing = true;
+
   fetch("/cart/clear", {
     method: "POST",
   })
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Gagal menghapus keranjang");
+      }
+      return res.json();
+    })
     .then((data) => {
       if (data.success) {
-        document.getElementById("wrapper").innerHTML = "";
-        document.getElementById("jumlahcart").innerHTML = "<span>0</span>";
-        document.getElementById("Subtotal").textContent = "-";
-        document.getElementById("ppn").textContent = "-";
-        document.getElementById("diskon").textContent = "0";
-        document.getElementById("total").textContent = "-";
-        document.getElementById("uangBayar").textContent = "-";
-        document.getElementById("kembalian").textContent = "-";
+        // Clear display
+        const wrapper = document.getElementById("wrapper");
+        if (wrapper) {
+          wrapper.innerHTML = '<div class="text-center py-5"><p class="text-muted">Keranjang kosong</p></div>';
+        }
 
-        document.getElementById("inputNamaPembeli").value = "";
-        document.getElementById("inputCash").value = "";
-        document.getElementById("testTotal").innerText = "-";
+        // Reset cart count
+        const cartBadge = document.getElementById("jumlahcart");
+        if (cartBadge) {
+          cartBadge.innerHTML = "<span>0</span>";
+        }
+
+        // Reset totals
+        updateElement("testTotal", "-");
+        resetPaymentForm();
+
+        // Clear local cart
+        cart = {};
+
+        showSuccess("Keranjang berhasil dikosongkan!");
       }
+    })
+    .catch((error) => {
+      console.error("Error clearing cart:", error);
+      showError(error.message || "Gagal menghapus keranjang");
+    })
+    .finally(() => {
+      isProcessing = false;
     });
-});
+}
 
-// sturk
+function resetPaymentForm() {
+  // Reset payment summary
+  updateElement("Subtotal", "-");
+  updateElement("ppn", "-");
+  updateElement("diskon", "-");
+  updateElement("total", "-");
+  updateElement("uangBayar", "-");
+  updateElement("kembalian", "-");
 
+  // Clear form inputs
+  const namaInput = document.getElementById("inputNamaPembeli");
+  const cashInput = document.getElementById("inputCash");
+
+  if (namaInput) namaInput.value = "";
+  if (cashInput) cashInput.value = "";
+}
+
+// ===================================== DOWNLOAD STRUK
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("btn-struk")) {
-    const nama = document.getElementById("inputNamaPembeli").value;
-    const cash = document.getElementById("inputCash").value;
-
-    fetch("/download_struk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama: nama, cash: cash }),
-    });
+    e.preventDefault();
+    downloadStruk();
   }
+});
+
+function downloadStruk() {
+  if (isProcessing) return;
+
+  const nama = document.getElementById("inputNamaPembeli")?.value.trim();
+  const cashInput = document.getElementById("inputCash")?.value;
+  const cash = parseInt(cashInput);
+
+  // Validasi input
+  if (!validateNama(nama)) return;
+  if (!validateCash(cash)) return;
+
+  // Cek apakah sudah diproses pembayaran
+  const totalElement = document.getElementById("total");
+  if (!totalElement || totalElement.innerText === "-") {
+    showError("Silakan proses pembayaran terlebih dahulu!");
+    return;
+  }
+
+  isProcessing = true;
+
+  fetch("/download_struk", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nama: nama, cash: cash }),
+  });
+}
+
+// ===================================== INITIALIZE
+document.addEventListener("DOMContentLoaded", () => {
+  initClearButton();
+  console.log("Cart system initialized");
 });
 
 // ================================================Start tombol Navbar============================================================== //
@@ -224,5 +419,3 @@ ScrollReveal().reveal(".h1team", { origin: "top" });
 ScrollReveal().reveal(".rfk", { origin: "left" });
 ScrollReveal().reveal(".ndi", { origin: "bottom" });
 ScrollReveal().reveal(".cia", { origin: "right" });
-
-
