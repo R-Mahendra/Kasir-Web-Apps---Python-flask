@@ -1,23 +1,26 @@
-import json
-import io
-import datetime
+import json, datetime, io
 from decimal import Decimal
 from flask import Flask, send_file, render_template, request, session, jsonify
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 
-app = Flask(__name__)
-app.secret_key = "53616c7465645f5ff22da9cb2932309bc5d27f5fb2f59d57bca3150476f82a19"
 
-# ===================================== CONSTANTS
+app = Flask(__name__)
+app.secret_key = "ZhaenxSecret"
+
 PAJAK = Decimal("0.10")
 DISKON = Decimal("0.10")
 
 
+@app.route("/")
+def index():
+    cart = session.get("jumlahcart", [])
+    return render_template("index.html", menu=menu, cart=cart)
+
+
 # ===================================== LOAD DATA JSON (API)
 def load_menu():
-    """Load menu with error handling"""
     try:
         with open("data/menu.json", "r", encoding="utf-8") as file:
             return json.load(file)
@@ -34,7 +37,6 @@ menu = load_menu()
 
 # ===================================== HELPER FUNCTIONS
 def hitung_total(subtotal):
-    """Calculate discount, tax, and total"""
     subtotal = Decimal(str(subtotal))
     diskon = int(subtotal * DISKON)
     dpp = subtotal - diskon
@@ -44,14 +46,12 @@ def hitung_total(subtotal):
 
 
 def calculate_totals(cart):
-    """Calculate all totals in cart"""
     subtotal = sum(int(item["price"]) * int(item["qty"]) for item in cart)
     diskon, ppn, total = hitung_total(subtotal)
     return subtotal, diskon, ppn, total
 
 
 def find_item_in_cart(cart, item_id):
-    """Find item in cart by id"""
     for item in cart:
         if str(item["id"]) == str(item_id):
             return item
@@ -59,7 +59,6 @@ def find_item_in_cart(cart, item_id):
 
 
 def find_menu_item(item_id):
-    """Find menu item by id"""
     for kategori, items in menu.items():
         for m in items:
             if str(m["id"]) == str(item_id):
@@ -68,7 +67,6 @@ def find_menu_item(item_id):
 
 
 def update_session_cart(cart):
-    """Update session cart and count"""
     session["jumlahcart"] = cart
     session["cart_count"] = sum(i["qty"] for i in cart)
     session.modified = True
@@ -377,12 +375,6 @@ def cart_get():
         )
     except Exception as e:
         app.logger.error(f"Error in cart_get: {str(e)}")
-
-
-@app.route("/")
-def index():
-    cart = session.get("jumlahcart", [])
-    return render_template("index.html", menu=menu, cart=cart)
 
 
 if __name__ == "__main__":
