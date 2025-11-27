@@ -360,19 +360,73 @@ function downloadStruk() {
   isProcessing = true;
   disableButtons(true);
 
+  // Generate filename SEBELUM request
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("id-ID").split("/").reverse().join("-");
+  const filename = `struk-${dateStr}.pdf`;
+
+  // METODE BARU: Gunakan direct link download (compatible dengan IDM)
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "/download_struk";
+  form.style.display = "none";
+
+  // Add CSRF token if you use it
+  // const csrfInput = document.createElement('input');
+  // csrfInput.name = 'csrf_token';
+  // csrfInput.value = 'YOUR_CSRF_TOKEN';
+  // form.appendChild(csrfInput);
+
+  const namaInput = document.createElement("input");
+  namaInput.name = "nama";
+  namaInput.value = nama;
+  form.appendChild(namaInput);
+
+  const cashInputField = document.createElement("input");
+  cashInputField.name = "cash";
+  cashInputField.value = cash;
+  form.appendChild(cashInputField);
+
+  document.body.appendChild(form);
+  form.submit();
+
+  // Cleanup form setelah submit
+  setTimeout(() => {
+    document.body.removeChild(form);
+    isProcessing = false;
+    disableButtons(false);
+    showSuccess("Struk sedang diunduh...");
+  }, 500);
+}
+
+// ALTERNATIF: Jika tetap ingin pakai fetch (tapi kurang compatible dengan IDM)
+function downloadStrukWithFetch() {
+  if (isProcessing) return;
+
+  const nama = document.getElementById("inputNamaPembeli")?.value.trim();
+  const cashInput = document.getElementById("inputCash")?.value;
+  const cash = parseInt(cashInput);
+
+  if (!validateNama(nama)) return;
+  if (!validateCash(cash)) return;
+
+  const totalElement = document.getElementById("total");
+  if (!totalElement || totalElement.innerText === "-") {
+    showError("Silakan proses pembayaran terlebih dahulu!");
+    return;
+  }
+
+  isProcessing = true;
+  disableButtons(true);
+
   fetch("/download_struk", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nama: nama, cash: cash }),
   })
     .then(async (res) => {
-      // Get content type to determine response format
       const contentType = res.headers.get("content-type");
-      console.log("RAW RESPONSE:", res);
-      console.log("CONTENT-TYPE:", res.headers.get("content-type"));
 
-
-      // Check if response is PDF (success case)
       if (contentType && contentType.includes("application/pdf")) {
         if (!res.ok) {
           throw new Error("Failed to generate PDF");
@@ -380,41 +434,39 @@ function downloadStruk() {
         return res.blob();
       }
 
-      // If not PDF, it must be JSON (error case)
       if (contentType && contentType.includes("application/json")) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Terjadi kesalahan");
       }
 
-      // Unknown content type
       throw new Error("Invalid response format");
     })
     .then((blob) => {
-      // This only runs if we got a blob (PDF)
       if (!blob || blob.size === 0) {
         throw new Error("PDF kosong, silakan coba lagi");
       }
 
-      console.log("PDF downloaded successfully, size:", blob.size, "bytes");
+      console.log("PDF downloaded, size:", blob.size, "bytes");
 
-      // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
+      a.style.display = "none";
       a.href = url;
 
-      // Generate filename
       const today = new Date();
       const dateStr = today.toLocaleDateString("id-ID").split("/").reverse().join("-");
       a.download = `struk-${dateStr}.pdf`;
 
       document.body.appendChild(a);
+
+      // Trigger download
       a.click();
 
-      // Cleanup after a short delay
+      // Cleanup SETELAH download selesai (penting untuk IDM)
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-      }, 100);
+      }, 5000); // Increased dari 100ms ke 5000ms
 
       showSuccess("Struk berhasil diunduh!");
     })

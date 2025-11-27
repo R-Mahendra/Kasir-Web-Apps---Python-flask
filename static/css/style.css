@@ -289,6 +289,9 @@ section {
   color: var(--zx-violet);
   margin-bottom: 0;
 }
+#Team .container{
+  overflow: hidden;
+}
 
 .canvas-parent {
   background-color: var(--zx-violet);
@@ -354,7 +357,7 @@ section {
   text-align: center;
 }
 .wrapper .cards img {
-  width: 50%;
+  max-width: 100%;
   padding: 0;
   border: 2px solid var(--zx-violet);
   border-radius: 8px;

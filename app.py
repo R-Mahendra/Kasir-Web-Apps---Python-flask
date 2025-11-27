@@ -234,9 +234,6 @@ def cart_clear():
     return jsonify({"success": True})
 
 
-import traceback  # DITAMBAHKAN
-
-
 @app.route("/download_struk", methods=["POST"])
 def download_struk():
     try:
@@ -244,7 +241,12 @@ def download_struk():
         if not cart:
             return jsonify({"error": "Keranjang kosong"}), 400
 
-        data = request.get_json(silent=True) or {}
+        # Support both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+
         nama = data.get("nama", "").strip()
 
         try:
@@ -347,27 +349,44 @@ def download_struk():
         pdf.drawString(200, y, "Terimakasih sudah berkunjung.")
 
         pdf.showPage()
-        pdf.save()  # PDF benar-benar ditutup
-        buffer.seek(0)  # pointer balik ke awal
+        pdf.save()
+        buffer.seek(0)
+
         print("PDF SIZE:", buffer.getbuffer().nbytes)
 
-        # AUTO FILENAME
-        tanggal = datetime.datetime.now().strftime("%d-%m-%Y")
+        # Generate unique filename dengan timestamp untuk avoid duplicate
+        tanggal = datetime.datetime.now().strftime("%d-%m-%Y-%H%M%S")
         fileDownload = f"struk-{tanggal}.pdf"
 
-        return send_file(
+        # PENTING: Headers untuk compatible dengan IDM
+        response = send_file(
             buffer,
             mimetype="application/pdf",
             as_attachment=True,
             download_name=fileDownload,
-            max_age=0,
-            conditional=False,
         )
+
+        # Add headers untuk prevent caching dan support IDM
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        response.headers["Content-Disposition"] = (
+            f'attachment; filename="{fileDownload}"'
+        )
+        response.headers["Content-Length"] = str(buffer.getbuffer().nbytes)
+
+        return response
 
     except Exception as e:
         print("ERROR:", e)
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+
+        # Return proper JSON error for AJAX requests
+        if request.is_json:
+            return jsonify({"error": str(e)}), 500
+        else:
+            # For form submission, return error page or redirect
+            return f"<html><body><h1>Error: {str(e)}</h1></body></html>", 500
 
 
 @app.route("/cart/get", methods=["GET"])
