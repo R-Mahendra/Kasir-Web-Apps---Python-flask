@@ -1,5 +1,3 @@
-// ==========================================================
-
 let cart = {};
 let isProcessing = false; // Prevent double-click
 
@@ -37,6 +35,13 @@ function validateCash(cash) {
   return true;
 }
 
+function disableButtons(disable) {
+  const buttons = document.querySelectorAll(".btn-cart, .btn-plus, .btn-minus, .btn-remove, .btn-proses, .btn-clear, .btn-struk");
+  buttons.forEach((btn) => {
+    btn.disabled = disable;
+  });
+}
+
 // ===================================== UPDATE CART DISPLAY
 function updateCartDisplay(serverCart) {
   cart = {};
@@ -61,33 +66,38 @@ function renderCart() {
   }
 
   wrapper.innerHTML = "";
+
   Object.values(cart).forEach((item) => {
     wrapper.innerHTML += `
-      <div class="row d-flex justify-content-center align-items-center wrapper-row">
-        <div class="col-lg-4">
-          <div class="cards">
+      <div class="row d-flex justify-content-between align-items-center wrapper-row">
+        <div class="col-lg-2">
+          <div class="cards d-flex justify-content-between align-items-center">
             <img src="${item.img}" class="img-thumbnail" alt="${item.nama}" />
           </div>
         </div>
-        <div class="col-lg-4 d-flex justify-content-center align-items-center">
+
+        <div class="col-lg-4">
           <div class="card d-flex justify-content-center align-items-center card-item">
             <h6 class="mb-2">${item.nama}</h6>
             <h6>Rp ${formatRupiah(item.subtotal)}</h6>
           </div>
         </div>
-        <div class="col-lg-4 d-flex justify-content-center align-items-center">
-          <div class="card card-btngrup mx-auto border-0">
-            <div class="btn-group border-0 d-flex justify-content-center align-items-center">
-              <button type="button" class="btn btn-plus" data-id="${item.id}">+</button>
+
+        <div class="col-lg-3">
+          <div class="card card-btngrup border-0">
+            <div class="btn-group border-0 d-flex justify-content-between align-items-center">
+              <button class="btn btn-plus" data-id="${item.id}">+</button>
               <h6 class="mx-2">${item.qty}</h6>
-              <button type="button" class="btn btn-minus" data-id="${item.id}">-</button>
+              <button class="btn btn-minus" data-id="${item.id}">-</button>
             </div>
           </div>
-          <div class="ps">
-            <button type="button" class="btn btn-remove" data-id="${item.id}">Hapus</button>
-          </div>
         </div>
-      </div>
+
+        <div class="col-lg-2">
+          <button class="btn btn-danger btn-sm btn-remove" data-id="${item.id}">
+            <i class="fas fa-trash"></i> Hapus
+          </button>
+        </div>
       </div>`;
   });
 }
@@ -97,6 +107,8 @@ function updateCart(action, id) {
   if (isProcessing) return;
 
   isProcessing = true;
+  disableButtons(true);
+
   fetch("/cart/update", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -137,6 +149,7 @@ function updateCart(action, id) {
     })
     .finally(() => {
       isProcessing = false;
+      disableButtons(false);
     });
 }
 
@@ -159,10 +172,12 @@ document.addEventListener("click", (e) => {
     const id = e.target.dataset.id;
     if (id) updateCart("plus", id);
   }
+
   if (e.target.classList.contains("btn-minus")) {
     const id = e.target.dataset.id;
     if (id) updateCart("minus", id);
   }
+
   if (e.target.classList.contains("btn-remove")) {
     const id = e.target.dataset.id;
     if (id && confirm("Hapus item ini dari keranjang?")) {
@@ -197,6 +212,8 @@ function prosesPembayaran() {
   }
 
   isProcessing = true;
+  disableButtons(true);
+
   fetch("/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -227,6 +244,7 @@ function prosesPembayaran() {
     })
     .finally(() => {
       isProcessing = false;
+      disableButtons(false);
     });
 }
 
@@ -251,6 +269,7 @@ function clearCart() {
   if (isProcessing) return;
 
   isProcessing = true;
+  disableButtons(true);
 
   fetch("/cart/clear", {
     method: "POST",
@@ -291,6 +310,7 @@ function clearCart() {
     })
     .finally(() => {
       isProcessing = false;
+      disableButtons(false);
     });
 }
 
@@ -338,12 +358,74 @@ function downloadStruk() {
   }
 
   isProcessing = true;
+  disableButtons(true);
 
   fetch("/download_struk", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nama: nama, cash: cash }),
-  });
+  })
+    .then(async (res) => {
+      // Get content type to determine response format
+      const contentType = res.headers.get("content-type");
+      console.log("RAW RESPONSE:", res);
+      console.log("CONTENT-TYPE:", res.headers.get("content-type"));
+
+
+      // Check if response is PDF (success case)
+      if (contentType && contentType.includes("application/pdf")) {
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        return res.blob();
+      }
+
+      // If not PDF, it must be JSON (error case)
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Terjadi kesalahan");
+      }
+
+      // Unknown content type
+      throw new Error("Invalid response format");
+    })
+    .then((blob) => {
+      // This only runs if we got a blob (PDF)
+      if (!blob || blob.size === 0) {
+        throw new Error("PDF kosong, silakan coba lagi");
+      }
+
+      console.log("PDF downloaded successfully, size:", blob.size, "bytes");
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Generate filename
+      const today = new Date();
+      const dateStr = today.toLocaleDateString("id-ID").split("/").reverse().join("-");
+      a.download = `struk-${dateStr}.pdf`;
+
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup after a short delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+
+      showSuccess("Struk berhasil diunduh!");
+    })
+    .catch((error) => {
+      console.error("Error downloading struk:", error);
+      showError(error.message || "Gagal mengunduh struk");
+    })
+    .finally(() => {
+      isProcessing = false;
+      disableButtons(false);
+    });
 }
 
 // ===================================== LOAD CART FROM SERVER

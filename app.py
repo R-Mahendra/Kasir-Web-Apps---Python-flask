@@ -1,26 +1,29 @@
-import json, datetime, io
+import json
+import io
+import datetime
 from decimal import Decimal
 from flask import Flask, send_file, render_template, request, session, jsonify
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
+import traceback
 
 
 app = Flask(__name__)
 app.secret_key = "ZhaenxSecret"
 
+app.config["PROPAGATE_EXCEPTIONS"] = True
+app.config["DEBUG"] = True
+
+
+# ===================================== CONSTANTS
 PAJAK = Decimal("0.10")
 DISKON = Decimal("0.10")
 
 
-@app.route("/")
-def index():
-    cart = session.get("jumlahcart", [])
-    return render_template("index.html", menu=menu, cart=cart)
-
-
 # ===================================== LOAD DATA JSON (API)
 def load_menu():
+    """Load menu with error handling"""
     try:
         with open("data/menu.json", "r", encoding="utf-8") as file:
             return json.load(file)
@@ -37,6 +40,7 @@ menu = load_menu()
 
 # ===================================== HELPER FUNCTIONS
 def hitung_total(subtotal):
+    """Calculate discount, tax, and total"""
     subtotal = Decimal(str(subtotal))
     diskon = int(subtotal * DISKON)
     dpp = subtotal - diskon
@@ -46,12 +50,14 @@ def hitung_total(subtotal):
 
 
 def calculate_totals(cart):
+    """Calculate all totals in cart"""
     subtotal = sum(int(item["price"]) * int(item["qty"]) for item in cart)
     diskon, ppn, total = hitung_total(subtotal)
     return subtotal, diskon, ppn, total
 
 
 def find_item_in_cart(cart, item_id):
+    """Find item in cart by id"""
     for item in cart:
         if str(item["id"]) == str(item_id):
             return item
@@ -59,6 +65,7 @@ def find_item_in_cart(cart, item_id):
 
 
 def find_menu_item(item_id):
+    """Find menu item by id"""
     for kategori, items in menu.items():
         for m in items:
             if str(m["id"]) == str(item_id):
@@ -67,6 +74,7 @@ def find_menu_item(item_id):
 
 
 def update_session_cart(cart):
+    """Update session cart and count"""
     session["jumlahcart"] = cart
     session["cart_count"] = sum(i["qty"] for i in cart)
     session.modified = True
@@ -226,6 +234,9 @@ def cart_clear():
     return jsonify({"success": True})
 
 
+import traceback  # DITAMBAHKAN
+
+
 @app.route("/download_struk", methods=["POST"])
 def download_struk():
     try:
@@ -233,7 +244,7 @@ def download_struk():
         if not cart:
             return jsonify({"error": "Keranjang kosong"}), 400
 
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         nama = data.get("nama", "").strip()
 
         try:
@@ -336,9 +347,9 @@ def download_struk():
         pdf.drawString(200, y, "Terimakasih sudah berkunjung.")
 
         pdf.showPage()
-        pdf.save()
-
-        buffer.seek(0)
+        pdf.save()  # PDF benar-benar ditutup
+        buffer.seek(0)  # pointer balik ke awal
+        print("PDF SIZE:", buffer.getbuffer().nbytes)
 
         # AUTO FILENAME
         tanggal = datetime.datetime.now().strftime("%d-%m-%Y")
@@ -349,11 +360,14 @@ def download_struk():
             mimetype="application/pdf",
             as_attachment=True,
             download_name=fileDownload,
+            max_age=0,
+            conditional=False,
         )
 
     except Exception as e:
-        app.logger.error(f"Error in download_struk: {str(e)}")
-        return jsonify({"error": "Gagal membuat struk"}), 500
+        print("ERROR:", e)
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/cart/get", methods=["GET"])
@@ -375,7 +389,14 @@ def cart_get():
         )
     except Exception as e:
         app.logger.error(f"Error in cart_get: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/")
+def index():
+    cart = session.get("jumlahcart", [])
+    return render_template("index.html", menu=menu, cart=cart)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True)
