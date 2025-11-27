@@ -250,7 +250,8 @@ section {
   text-align: center;
 }
 #Team {
-  padding-top: 5rem;
+  padding-top: 3rem;
+  padding-bottom: 0;
 }
 
 #Team img {
@@ -453,4 +454,14 @@ section {
   color: var(--zx-violet);
   border: 2px solid var(--zx-violet);
   border-radius: 1rem;
+}
+footer{
+  padding: 10px 0 10px 0;
+  color: var(--text-white);
+  background: var(--zx-violet);
+  font-weight: 200;
+  border-top: 3px solid var(--zx-yellow);
+}
+footer p{
+  font-size: 13px;
 }

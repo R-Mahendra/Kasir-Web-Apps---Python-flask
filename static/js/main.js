@@ -583,3 +583,8 @@ ScrollReveal().reveal(".h1team", { origin: "top" });
 ScrollReveal().reveal(".rfk", { origin: "left" });
 ScrollReveal().reveal(".ndi", { origin: "bottom" });
 ScrollReveal().reveal(".cia", { origin: "right" });
+
+const start = 2025;
+const now = new Date().getFullYear();
+
+document.getElementById("copy").innerHTML = "copyright &copy; " + (start === now ? start : start + " - " + now) + " All rights reserved.";
