@@ -6,14 +6,16 @@ from flask import Flask, send_file, render_template, request, session, jsonify
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
-import traceback
 
 
 app = Flask(__name__)
 app.secret_key = "ZhaenxSecret"
 
-app.config["PROPAGATE_EXCEPTIONS"] = True
-app.config["DEBUG"] = True
+
+@app.route("/")
+def index():
+    cart = session.get("jumlahcart", [])
+    return render_template("index.html", menu=menu, cart=cart)
 
 
 # ===================================== CONSTANTS
@@ -379,7 +381,6 @@ def download_struk():
 
     except Exception as e:
         print("ERROR:", e)
-        traceback.print_exc()
 
         # Return proper JSON error for AJAX requests
         if request.is_json:
@@ -409,12 +410,6 @@ def cart_get():
     except Exception as e:
         app.logger.error(f"Error in cart_get: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
-
-
-@app.route("/")
-def index():
-    cart = session.get("jumlahcart", [])
-    return render_template("index.html", menu=menu, cart=cart)
 
 
 if __name__ == "__main__":
