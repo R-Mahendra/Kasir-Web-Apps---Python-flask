@@ -290,7 +290,7 @@ section {
   color: var(--zx-violet);
   margin-bottom: 0;
 }
-#Team .container{
+#Team .container {
   overflow: hidden;
 }
 
@@ -398,7 +398,6 @@ section {
   border-radius: 10px;
 }
 
-
 .wrapper .card-btngrup button:active {
   background: var(--zx-yellow);
   color: var(--zx-violet);
@@ -455,13 +454,13 @@ section {
   border: 2px solid var(--zx-violet);
   border-radius: 1rem;
 }
-footer{
+footer {
   padding: 10px 0 10px 0;
   color: var(--text-white);
   background: var(--zx-violet);
   font-weight: 200;
   border-top: 3px solid var(--zx-yellow);
 }
-footer p{
+footer p {
   font-size: 13px;
 }

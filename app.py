@@ -145,9 +145,13 @@ def cart_update():
 
         else:
             return jsonify({"error": "Invalid action"}), 400
-
+        
+         # Update session dengan cart yang sudah dimodifikasi
         update_session_cart(cart)
+
+        # Hitung semua total untuk response
         subtotal, diskon, ppn, total = calculate_totals(cart)
+
 
         return jsonify(
             {
@@ -189,14 +193,7 @@ def checkout():
         diskon, ppn, total = hitung_total(subtotal)
 
         if cash < total:
-            return (
-                jsonify(
-                    {
-                        "error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"
-                    }
-                ),
-                400,
-            )
+            return (jsonify({"error": f"Uang tidak cukup. Total: Rp {total:,}, Uang: Rp {cash:,}"}),400,)
 
         kembalian = cash - total
 
