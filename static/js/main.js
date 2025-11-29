@@ -368,7 +368,7 @@ function downloadStruk() {
   // METODE BARU: Gunakan direct link download (compatible dengan IDM)
   const form = document.createElement("form");
   form.method = "POST";
-  form.action = "/download_struk";
+  form.action = "/generate_struk";
   form.style.display = "none";
 
   // Add CSRF token if you use it
@@ -419,7 +419,7 @@ function downloadStrukWithFetch() {
   isProcessing = true;
   disableButtons(true);
 
-  fetch("/download_struk", {
+  fetch("/generate_struk", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nama: nama, cash: cash }),
